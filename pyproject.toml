@@ -1,0 +1,25 @@
+[project]
+name = "pico-docker-setup"
+version = "0.1.0"
+description = "Automated, security-conscious PicoClaw installer (Python rewrite)."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "rich",
+    "pyyaml",
+]
+
+[project.scripts]
+# uv run setup.py  →  uv run setup
+# uv run initialize.py  →  uv run initialize
+# uv run update.py  →  uv run update
+setup = "setup:main"
+initialize = "scripts.initialize:main"
+update = "scripts.update:main"
+
+[tool.uv]
+# uv will install the project's dependencies (rich, pyyaml) automatically
+# when you run `uv run setup.py` or `uv run setup`.
+# Set this to true to also create an isolated virtual environment (.venv).
+# Defaults to false; the scripts work either way.
+package = false

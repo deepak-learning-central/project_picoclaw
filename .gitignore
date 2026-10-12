@@ -1,0 +1,28 @@
+# PicoClaw source clone (built at runtime from official repo)
+picoclaw/
+
+# Runtime data used as Docker Compose named volumes (persist across runs)
+picoclaw-workspace
+picoclaw-npm-cache
+
+# Configuration and secrets
+config/
+.env
+
+# Logs
+*.log
+
+# macOS / editor artifacts
+.DS_Store
+*.swp
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Misc
+tmp/
+temp/

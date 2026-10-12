@@ -1,0 +1,97 @@
+# docker-compose.yml — PicoClaw Docker orchestration
+#
+# This file is the single Compose entry point for the pico-docker-setup project.
+# It builds the Gateway and Agent services from PicoClaw SOURCE (the full
+# build, docker/Dockerfile.full), NOT the outdated pre-built :latest image on
+# Docker Hub. See Notes.md and README.md for the reasoning.
+#
+# The PicoClaw source code is cloned at runtime into ./picoclaw/ and gitignored
+# so that this project repository contains only orchestration + automation.
+#
+# Prerequisites (installed automatically by setup.sh):
+#   - Docker + Docker Compose plugin
+#
+# Typical usage:
+#   # 1) Full setup (clone source, seed config, configure channels, build, start)
+#   ./setup.sh
+#
+#   # 2) Start the Gateway in detached mode (after setup)
+#   docker compose --profile gateway up -d
+#
+#   # 3) One-off agent query
+#   docker compose --profile agent run --rm picoclaw-agent -m "hello"
+#
+#   # 4) View logs
+#   docker compose --profile gateway logs -f
+#
+#   # 5) Update source + rebuild, then restart
+#   ./scripts/update.sh
+#
+#   # 6) Stop
+#   docker compose --profile gateway down
+#
+# Secrets (tokens, API keys) live in config/.security.yml and are gitignored.
+# config.json holds only non-sensitive settings.
+#
+# Profiles separate the long-running Gateway from the on-demand Agent:
+#   - gateway : the bot (runs forever, restart: unless-stopped)
+#   - agent   : one-shot agent CLI
+# By default neither profile is selected, so `docker compose up` starts
+# nothing — explicitly request --profile gateway (or --all-profiles).
+
+services:
+  # ─────────────────────────────────────────────────────────────────────
+  # PicoClaw Gateway — long-running bot service (Discord, Telegram, etc.)
+  # ─────────────────────────────────────────────────────────────────────
+  picoclaw-gateway:
+    build:
+      context: ./picoclaw
+      dockerfile: ./docker/Dockerfile.full   # full build = source + MCP Node runtime
+    container_name: picoclaw-gateway-full
+    restart: unless-stopped
+    profiles:
+      - gateway
+    volumes:
+      # Configuration file (read-only inside the container)
+      - ./config/config.json:/root/.picoclaw/config.json:ro
+      # Secrets file (tokens, API keys) — mounted read-write in case PicoClaw
+      # needs to write something, though we generate these on the host.
+      - ./config/.security.yml:/root/.picoclaw/.security.yml
+      # Persistent workspace: sessions, memory, logs, skills — survives
+      # container recreation.
+      - picoclaw-workspace:/root/.picoclaw/workspace
+      # NPM cache so MCP server installs are fast on rebuilds.
+      - picoclaw-npm-cache:/root/.npm
+    command: ["gateway"]
+    # Health check via the Gateway HTTP server (default :18790).
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:18790/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PicoClaw Agent — one-shot query service (full MCP support)
+  # ─────────────────────────────────────────────────────────────────────
+  picoclaw-agent:
+    build:
+      context: ./picoclaw
+      dockerfile: ./docker/Dockerfile.full
+    container_name: picoclaw-agent-full
+    profiles:
+      - agent
+    volumes:
+      - ./config/config.json:/root/.picoclaw/config.json:ro
+      - picoclaw-workspace:/root/.picoclaw/workspace
+      - picoclaw-npm-cache:/root/.npm
+    entrypoint: ["picoclaw", "agent"]
+    stdin_open: true
+    tty: true
+
+# Persistent storage for the workspace and NPM cache. These named volumes are
+# independent of the ./picoclaw/ clone — when you re-clone or rebuild, your
+# sessions and cache survive because they live in Docker's volume store.
+volumes:
+  picoclaw-workspace:
+  picoclaw-npm-cache:
