@@ -49,19 +49,22 @@ services:
       dockerfile: ./docker/Dockerfile.full   # full build = source + MCP Node runtime
     container_name: picoclaw-gateway-full
     restart: unless-stopped
+    user: "501:20"
     profiles:
       - gateway
     volumes:
       # Configuration file (read-only inside the container)
       - ./config/config.json:/root/.picoclaw/config.json:ro
-      # Secrets file (tokens, API keys) — mounted read-write in case PicoClaw
-      # needs to write something, though we generate these on the host.
+      # Secrets file (tokens, API keys) — mounted read-only to prevent
+      # "device or resource busy" errors on startup.
       - ./config/.security.yml:/root/.picoclaw/.security.yml:ro
       # Persistent workspace: sessions, memory, logs, skills — survives
       # container recreation.
       - picoclaw-workspace:/root/.picoclaw/workspace
       # NPM cache so MCP server installs are fast on rebuilds.
       - picoclaw-npm-cache:/root/.npm
+      # Shared folder for generated documents — accessible from host at ./share/
+      - ./share:/root/.picoclaw/share
     command: ["gateway"]
     # Health check via the Gateway HTTP server (default :18790).
     healthcheck:
@@ -79,12 +82,14 @@ services:
       context: ./picoclaw
       dockerfile: ./docker/Dockerfile.full
     container_name: picoclaw-agent-full
+    user: "501:20"
     profiles:
       - agent
     volumes:
       - ./config/config.json:/root/.picoclaw/config.json:ro
       - picoclaw-workspace:/root/.picoclaw/workspace
       - picoclaw-npm-cache:/root/.npm
+      - ./share:/root/.picoclaw/share
     entrypoint: ["picoclaw", "agent"]
     stdin_open: true
     tty: true
