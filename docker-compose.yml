@@ -54,9 +54,9 @@ services:
     volumes:
       # Configuration file (read-only inside the container)
       - ./config/config.json:/root/.picoclaw/config.json:ro
-      # Secrets file (tokens, API keys) — mounted read-only to prevent
-      # "device or resource busy" errors on startup.
-      - ./config/.security.yml:/root/.picoclaw/.security.yml:ro
+      # Secrets file (tokens, API keys) — mounted read-write so PicoClaw
+      # can save its state on startup (rename .tmp → .security.yml).
+      - ./config/.security.yml:/root/.picoclaw/.security.yml
       # Persistent workspace: sessions, memory, logs, skills — survives
       # container recreation.
       - picoclaw-workspace:/root/.picoclaw/workspace
