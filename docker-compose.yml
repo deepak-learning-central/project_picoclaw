@@ -45,8 +45,8 @@ services:
   # ─────────────────────────────────────────────────────────────────────
   picoclaw-gateway:
     build:
-      context: ./picoclaw
-      dockerfile: ./docker/Dockerfile.full   # full build = source + MCP Node runtime
+      context: .
+      dockerfile: ./picoclaw/docker/Dockerfile.full   # full build = source + MCP Node runtime
     container_name: picoclaw-gateway-full
     restart: unless-stopped
     profiles:
@@ -54,9 +54,9 @@ services:
     volumes:
       # Configuration file (read-only inside the container)
       - ./config/config.json:/root/.picoclaw/config.json:ro
-      # Secrets file (tokens, API keys) — mounted read-write so PicoClaw
-      # can save its state on startup (rename .tmp → .security.yml).
-      - ./config/.security.yml:/root/.picoclaw/.security.yml
+      # NOTE: .security.yml is NOT bind-mounted. It is copied into the image
+      # at build time (see Dockerfile.full) to avoid Docker rename issues on
+      # some filesystems. To update tokens, rebuild the image.
       # Persistent workspace: sessions, memory, logs, skills — survives
       # container recreation.
       - picoclaw-workspace:/root/.picoclaw/workspace
