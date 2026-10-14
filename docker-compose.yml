@@ -56,7 +56,7 @@ services:
       - ./config/config.json:/root/.picoclaw/config.json:ro
       # Secrets file (tokens, API keys) — mounted read-write in case PicoClaw
       # needs to write something, though we generate these on the host.
-      - ./config/.security.yml:/root/.picoclaw/.security.yml
+      - ./config/.security.yml:/root/.picoclaw/.security.yml:ro
       # Persistent workspace: sessions, memory, logs, skills — survives
       # container recreation.
       - picoclaw-workspace:/root/.picoclaw/workspace
