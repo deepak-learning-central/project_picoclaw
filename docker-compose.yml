@@ -45,8 +45,8 @@ services:
   # ─────────────────────────────────────────────────────────────────────
   picoclaw-gateway:
     build:
-      context: .
-      dockerfile: ./picoclaw/docker/Dockerfile.full   # full build = source + MCP Node runtime
+      context: ./picoclaw
+      dockerfile: ./docker/Dockerfile.full   # full build = source + MCP Node runtime
     container_name: picoclaw-gateway-full
     restart: unless-stopped
     profiles:
